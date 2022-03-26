@@ -4,7 +4,19 @@
  */
 package com.project.easyanalysis;
 
+import com.project.utilities.PropertiesFile;
+import com.project.excel_handling.DataSheetValidation;
+import com.project.excel_handling.TestCaseSheetEvaluation;
 import com.project.listeners.EventListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javax.swing.JOptionPane;
 
 /**
   * @author TechAnim
@@ -13,14 +25,22 @@ public class HomeFrame extends javax.swing.JFrame{
  
     static int status=0;
     EventListener event;
-    public static boolean stop_flag=false;
+    //public static boolean stop_flag=false;   
+    public static HomeFrame homeframe=null;
+    //public static Object testHF=homeframe;  
+    public static TestCaseSheetEvaluation tcSheetEval;
     
-    public HomeFrame() {
+    public HomeFrame() throws IOException {
         initComponents();
         this.setAlwaysOnTop(true);
-        event=new EventListener();        
-    } 
-      
+        event=new EventListener(); 
+        //setup properties file   
+        PropertiesFile.loadPropertiesFile();
+        //validate the data sheet excel exist
+        DataSheetValidation.validateSheet();
+        tcSheetEval=new TestCaseSheetEvaluation();           
+    }
+    
     @SuppressWarnings("unchecked")
     // <editor-fold defaultstate="collapsed" desc="Generated Code">//GEN-BEGIN:initComponents
     private void initComponents() {
@@ -29,8 +49,9 @@ public class HomeFrame extends javax.swing.JFrame{
         ExitButton = new javax.swing.JButton();
         StartBtn = new javax.swing.JRadioButton();
         StopBtn = new javax.swing.JRadioButton();
+        alertMessage = new javax.swing.JLabel();
 
-        setDefaultCloseOperation(javax.swing.WindowConstants.EXIT_ON_CLOSE);
+        setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
         setTitle("Easy Analysis");
 
         ExitButton.setText("Exit");
@@ -56,6 +77,9 @@ public class HomeFrame extends javax.swing.JFrame{
             }
         });
 
+        alertMessage.setForeground(new java.awt.Color(255, 0, 0));
+        alertMessage.setText(" ");
+
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
         getContentPane().setLayout(layout);
         layout.setHorizontalGroup(
@@ -64,40 +88,56 @@ public class HomeFrame extends javax.swing.JFrame{
                 .addGap(34, 34, 34)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(StartBtn)
-                        .addGap(18, 18, 18)
-                        .addComponent(StopBtn)
-                        .addContainerGap(236, Short.MAX_VALUE))
+                        .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+                            .addGroup(layout.createSequentialGroup()
+                                .addComponent(StartBtn)
+                                .addGap(18, 18, 18)
+                                .addComponent(StopBtn))
+                            .addComponent(ExitButton))
+                        .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
                     .addGroup(layout.createSequentialGroup()
-                        .addComponent(ExitButton)
-                        .addGap(0, 0, Short.MAX_VALUE))))
+                        .addComponent(alertMessage, javax.swing.GroupLayout.PREFERRED_SIZE, 315, javax.swing.GroupLayout.PREFERRED_SIZE)
+                        .addGap(0, 58, Short.MAX_VALUE))))
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(javax.swing.GroupLayout.Alignment.TRAILING, layout.createSequentialGroup()
-                .addContainerGap(23, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(StartBtn)
                     .addComponent(StopBtn))
                 .addGap(18, 18, 18)
                 .addComponent(ExitButton)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(alertMessage)
                 .addContainerGap())
         );
 
         pack();
     }// </editor-fold>//GEN-END:initComponents
      
+    public static void setVisibility(boolean visibility){   
+        if(visibility){
+            EventListener.start_flag=1;
+            homeframe.setVisible(visibility);
+        }
+        else{
+            EventListener.start_flag=0;
+            homeframe.setVisible(visibility);            
+        }       
+    }
+    
     private void StartBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_StartBtnActionPerformed
          if(event.t1.getState() == Thread.State.NEW){
             event.t1.start();                 
          }                 
-         if(event.start_flag==0){
-             event.start_flag=1;
+         if(EventListener.start_flag==0){
+             EventListener.start_flag=1;             
          }         
     }//GEN-LAST:event_StartBtnActionPerformed
 
     private void StopBtnActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_StopBtnActionPerformed
-        event.start_flag=0;  
+        EventListener.start_flag=0;  
         System.out.println("STOP button pressed");                 
     }//GEN-LAST:event_StopBtnActionPerformed
 
@@ -136,7 +176,23 @@ public class HomeFrame extends javax.swing.JFrame{
         /* Create and display the form */
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
-                new HomeFrame().setVisible(true);
+                try {
+                    homeframe=new HomeFrame();
+                } catch (IOException ex) {
+                    Logger.getLogger(HomeFrame.class.getName()).log(Level.SEVERE, null, ex);
+                }
+                homeframe.setVisible(true); 
+                System.out.println(Thread.currentThread().getName());
+               // testHF=homeframe;   //for testing purpose
+                homeframe.addWindowListener(new WindowAdapter(){
+                    @Override
+                    public void windowClosing(WindowEvent e) {
+                        int optionSelected=JOptionPane.showConfirmDialog(null, "Are sure to close this window ?");
+                        if(optionSelected == JOptionPane.YES_OPTION){
+                           System.exit(NORMAL);
+                        }                        
+                    }                    
+                });
             }
         });
     }
@@ -145,6 +201,7 @@ public class HomeFrame extends javax.swing.JFrame{
     private javax.swing.JButton ExitButton;
     private javax.swing.JRadioButton StartBtn;
     private javax.swing.JRadioButton StopBtn;
+    public static javax.swing.JLabel alertMessage;
     private javax.swing.ButtonGroup buttonGroup1;
     // End of variables declaration//GEN-END:variables
 
